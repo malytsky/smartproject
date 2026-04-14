@@ -1,0 +1,1 @@
+import{n as e}from"./index-GE50_5Vj.js";export{e as WebGPURenderer};
