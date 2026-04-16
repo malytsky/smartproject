@@ -3,6 +3,8 @@ import { AssetLoader } from '../core/AssetLoader';
 import { GameConfig } from '../models/GameConfig';
 import { BackgroundView } from '../views/BackgroundView';
 import { ShelvesView } from '../views/ShelvesView';
+import { CallToActionView } from '../views/CallToActionView';
+import { ButtonView } from '../views/ButtonView';
 import { gsap } from 'gsap';
 
 export class GameController {
@@ -12,6 +14,8 @@ export class GameController {
         
         this.background = null;
         this.shelves = null;
+        this.cta = null;
+        this.button = null;
         this.isMoving = false;
     }
 
@@ -43,8 +47,18 @@ export class GameController {
         
         this.shelves = new ShelvesView(this.assetLoader, GameConfig);
 
+        const ctaTexture = this.assetLoader.getTexture('Call to action.png');
+        this.cta = new CallToActionView(ctaTexture, GameConfig);
+        this.cta.scale.set(0.5);
+
+        const buttonTexture = this.assetLoader.getTexture('Button.png');
+        this.button = new ButtonView(buttonTexture, GameConfig);
+        this.button.scale.set(0.5);
+
         this.app.stage.addChild(this.background);
         this.app.stage.addChild(this.shelves);
+        this.app.stage.addChild(this.cta);
+        this.app.stage.addChild(this.button);
 
         this.distributeCats();
     }
@@ -174,7 +188,17 @@ export class GameController {
         const { width, height } = this.app.screen;
         
         if (this.background) this.background.resize(width, height);
-        if (this.shelves) this.shelves.resize(width, height);
+        if (this.shelves) {
+            this.shelves.resize(width, height);
+            if (this.cta) {
+                const shelfTopY = this.shelves.getTopShelfGlobalY();
+                this.cta.resize(width, height, shelfTopY);
+            }
+            if (this.button) {
+                const shelfBottomY = this.shelves.getBottomShelfGlobalY();
+                this.button.resize(width, height, shelfBottomY);
+            }
+        }
     }
 
     startIntro() {

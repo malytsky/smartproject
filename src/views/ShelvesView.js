@@ -58,6 +58,24 @@ export class ShelvesView extends PIXI.Container {
         return this.shelves[index].container.toGlobal(new PIXI.Point(0, 5));
     }
 
+    getTopShelfGlobalY() {
+        if (this.shelves.length === 0) return 0;
+        // Первая полка всегда самая верхняя (rowIndex 0)
+        const topShelf = this.shelves[0].container;
+        const globalPos = topShelf.getGlobalPosition();
+        // Высота полки 175, anchor 0.5, значит верхняя граница на -87.5px локально
+        return globalPos.y - (175 / 2) * this.scale.y;
+    }
+
+    getBottomShelfGlobalY() {
+        if (this.shelves.length === 0) return 0;
+        // Последняя полка всегда в нижнем ряду
+        const bottomShelf = this.shelves[this.shelves.length - 1].container;
+        const globalPos = bottomShelf.getGlobalPosition();
+        // Высота полки 175, anchor 0.5, значит нижняя граница на +87.5px локально
+        return globalPos.y + (175 / 2) * this.scale.y;
+    }
+
     moveCatToShelf(cat, targetShelfIndex) {
         const currentShelfIndex = this.shelves.findIndex(s => s.cat === cat);
         if (currentShelfIndex !== -1) {
