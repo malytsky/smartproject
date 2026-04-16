@@ -2,7 +2,6 @@ import * as PIXI from 'pixi.js';
 import { AssetLoader } from '../core/AssetLoader';
 import { GameConfig } from '../models/GameConfig';
 import { BackgroundView } from '../views/BackgroundView';
-import { CatView } from '../views/CatView';
 import { ShelvesView } from '../views/ShelvesView';
 import { gsap } from 'gsap';
 
@@ -12,7 +11,6 @@ export class GameController {
         this.assetLoader = new AssetLoader();
         
         this.background = null;
-        this.cat = null;
         this.shelves = null;
     }
 
@@ -42,14 +40,32 @@ export class GameController {
         const bgTexture = this.assetLoader.getTexture('back.png');
         this.background = new BackgroundView(bgTexture);
         
-        const catTexture = this.assetLoader.getTexture('Blue_cat_idle.png');
-        this.cat = new CatView(catTexture, GameConfig);
-        
         this.shelves = new ShelvesView(this.assetLoader, GameConfig);
 
         this.app.stage.addChild(this.background);
-        this.app.stage.addChild(this.cat);
         this.app.stage.addChild(this.shelves);
+
+        this.distributeCats();
+    }
+
+    distributeCats() {
+        const catPool = [];
+        GameConfig.catTypes.forEach(catType => {
+            for (let i = 0; i < catType.count; i++) {
+                catPool.push(catType.color);
+            }
+        });
+
+        // Перемешиваем котов
+        for (let i = catPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [catPool[i], catPool[j]] = [catPool[j], catPool[i]];
+        }
+
+        // Расставляем по полкам
+        catPool.forEach((color, index) => {
+            this.shelves.addCatToShelf(index, color);
+        });
     }
 
     setupListeners() {
@@ -60,7 +76,6 @@ export class GameController {
         const { width, height } = this.app.screen;
         
         if (this.background) this.background.resize(width, height);
-        if (this.cat) this.cat.resize(width, height);
         if (this.shelves) this.shelves.resize(width, height);
     }
 
