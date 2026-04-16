@@ -41,16 +41,7 @@ export class ShelfCatView extends PIXI.Container {
 
         if (texture) {
             this.sprite.texture = texture;
-            
-            // Если это стейт select, он обычно в два раза выше idle
-            // Нам нужно скорректировать масштаб, чтобы визуально кот не увеличивался
-            if (state === this.config.catStates.SELECT) {
-                // Высота idle примерно 260, высота select примерно 500
-                // Будем использовать коэффициент 0.52 (260/500), чтобы привести к размеру idle
-                this.sprite.scale.set(0.52);
-            } else {
-                this.sprite.scale.set(1);
-            }
+            this.sprite.scale.set(1);
         }
         
         if (state === this.config.catStates.SLEEP) {

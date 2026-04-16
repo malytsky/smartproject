@@ -38,11 +38,10 @@ export class CallToActionView extends PIXI.Container {
         this.scale.set(shelvesScale); 
 
         // Позиционируем на 40 пикселей выше верхней границы полок (с учетом масштаба)
-        const gap = 40 * this.scale.y;
+        const gap = 30 * this.scale.y;
         this.y = shelfTopGlobalY - (this.sprite.height * this.scale.y / 2) - gap;
         
-        // Ограничение по верху экрана: если контент все равно не лезет, 
-        // упираем в край, но не сдвигаем ниже, чем положено относительно полок
+        // Ограничение по верху экрана
         const topMargin = 10;
         if (this.y - (this.sprite.height * this.scale.y / 2) < topMargin) {
             this.y = topMargin + (this.sprite.height * this.scale.y / 2);

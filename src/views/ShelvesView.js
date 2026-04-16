@@ -42,8 +42,6 @@ export class ShelvesView extends PIXI.Container {
                 });
             }
         });
-
-        this.shelvesContainer.cacheAsTexture(true);
     }
 
     addCatToShelf(index, catColor, existingCat = null) {
@@ -67,25 +65,24 @@ export class ShelvesView extends PIXI.Container {
     getShelfGlobalPosition(index) {
         if (!this.shelves[index]) return null;
         const shelf = this.shelves[index].container;
-        return this.toGlobal(new PIXI.Point(shelf.x, shelf.y + 5));
+        // Мы используем getGlobalPosition для надежности в v8
+        return shelf.getGlobalPosition();
     }
 
     getTopShelfGlobalY() {
         if (this.shelves.length === 0) return 0;
         // Первая полка всегда самая верхняя (rowIndex 0)
         const topShelf = this.shelves[0].container;
-        const globalPos = topShelf.getGlobalPosition();
-        // Высота полки 175, anchor 0.5, значит верхняя граница на -87.5px локально
-        return globalPos.y - (175 / 2) * this.scale.y;
+        // Глобальная позиция = позиция контейнера + локальная позиция полки * масштаб - половина высоты полки * масштаб
+        return this.y + topShelf.y * this.scale.y - (175 / 2) * this.scale.y;
     }
 
     getBottomShelfGlobalY() {
         if (this.shelves.length === 0) return 0;
         // Последняя полка всегда в нижнем ряду
         const bottomShelf = this.shelves[this.shelves.length - 1].container;
-        const globalPos = bottomShelf.getGlobalPosition();
-        // Высота полки 175, anchor 0.5, значит нижняя граница на +87.5px локально
-        return globalPos.y + (175 / 2) * this.scale.y;
+        // Глобальная позиция = позиция контейнера + локальная позиция полки * масштаб + половина высоты полки * масштаб
+        return this.y + bottomShelf.y * this.scale.y + (175 / 2) * this.scale.y;
     }
 
     moveCatToShelf(cat, targetShelfIndex) {
@@ -111,29 +108,36 @@ export class ShelvesView extends PIXI.Container {
     }
 
     resize(width, height) {
+        const isPortrait = height > width;
         this.position.set(width / 2, height / 2);
         
-        // Высота всей композиции (CTA + Gaps + Shelves + Button):
-        // CTA: 144
-        // Gap: 40
-        // Shelves: rowIndex from 0 to 5, total height = (5 * 210) + shelfHeight(175) = 1225
-        // Gap: 40
-        // Button: 189
-        // Итого: 144 + 40 + 1225 + 40 + 189 = 1638
+        let totalContentHeight, totalContentWidth;
         
-        const totalContentHeight = 1650; 
-        const totalContentWidth = 900; // 6 * 150
-        
-        const scaleX = width / totalContentWidth;
-        const scaleY = height / totalContentHeight;
-        
-        const baseScale = Math.min(scaleX, scaleY, 1);
-        this.scale.set(baseScale);
+        if (isPortrait) {
+            // Вертикальная раскладка
+            totalContentHeight = 1650; 
+            totalContentWidth = 900; 
+            
+            const scaleX = width / totalContentWidth;
+            const scaleY = height / totalContentHeight;
+            const baseScale = Math.min(scaleX, scaleY, 0.8);
+            this.scale.set(baseScale);
 
-        // Центрируем всю композицию в ShelvesView.y
-        // Чтобы все было сбалансировано, сдвинем ShelvesView.y чуть вниз,
-        // так как сверху CTA (144), а снизу Button (189). 
-        // Разница (189 - 144) / 2 = 22.5. Сдвинем на 23px * scale вниз.
-        this.y = (height / 2) + (23 * this.scale.y);
+            // Сдвигаем на 23px * scale вниз для баланса
+            this.y = (height / 2) + (23 * this.scale.y);
+        } else {
+            // Горизонтальная раскладка
+            // Для landscape уменьшаем целевую высоту контента, чтобы все влезло по вертикали
+            totalContentHeight = 1550; 
+            totalContentWidth = 1200; 
+            
+            const scaleX = width / totalContentWidth;
+            const scaleY = height / totalContentHeight;
+            const baseScale = Math.min(scaleX, scaleY, 0.4);
+            this.scale.set(baseScale);
+            
+            // В ландшафте центрируем с небольшим смещением вниз для компенсации CTA/Button
+            this.y = (height / 2) + (23 * this.scale.y);
+        }
     }
 }

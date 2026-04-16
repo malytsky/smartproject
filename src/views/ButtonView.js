@@ -70,11 +70,10 @@ export class ButtonView extends PIXI.Container {
         this.scale.set(shelvesScale); 
 
         // Позиционируем ниже нижней границы полок (с учетом масштаба)
-        const gap = 40 * this.scale.y;
+        const gap = 30 * this.scale.y;
         this.y = shelfBottomGlobalY + (this.sprite.height * this.scale.y / 2) + gap;
         
-        // Ограничение по низу экрана: если контент не лезет, 
-        // упираем в край, но не сдвигаем выше, чем положено относительно полок
+        // Ограничение по низу экрана
         const bottomMargin = 10;
         const buttonBottomY = this.y + (this.sprite.height * this.scale.y / 2);
         if (buttonBottomY > height - bottomMargin) {

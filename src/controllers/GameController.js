@@ -114,14 +114,24 @@ export class GameController {
         cat.setState(GameConfig.catStates.SELECT);
 
         // Чтобы кот был на переднем плане, временно переносим его в stage
-        const currentGlobalPos = cat.toGlobal(new PIXI.Point(0, 0));
+        const currentGlobalPos = cat.getGlobalPosition();
+        
+        // В PIXI v8 масштабирование можно рассчитать из мировых матриц
+        const mat = cat.worldTransform;
+        const worldScaleX = Math.sqrt(mat.a * mat.a + mat.b * mat.b);
+        const worldScaleY = Math.sqrt(mat.c * mat.c + mat.d * mat.d);
+        
         this.app.stage.addChild(cat);
+        cat.scale.set(worldScaleX, worldScaleY);
+        
         const stagePos = this.app.stage.toLocal(currentGlobalPos);
         cat.x = stagePos.x;
         cat.y = stagePos.y;
 
         // Получаем глобальные координаты полки назначения
         const targetGlobalPos = this.shelves.getShelfGlobalPosition(emptyShelfIndex);
+        // Коты на полке имеют небольшое смещение по Y (shelf.y + 5)
+        targetGlobalPos.y += 5 * worldScaleY;
         const targetStagePos = this.app.stage.toLocal(targetGlobalPos);
 
         gsap.to(cat, {
@@ -134,6 +144,7 @@ export class GameController {
                 const shelf = this.shelves.shelves[emptyShelfIndex].container;
                 cat.x = shelf.x;
                 cat.y = shelf.y + 5;
+                cat.scale.set(GameConfig.catOnShelfScale);
                 this.shelves.catsContainer.addChild(cat);
 
                 // Обновляем логику в ShelvesView
@@ -257,12 +268,16 @@ export class GameController {
     }
 
     setupListeners() {
-        window.addEventListener('resize', () => this.onResize());
+        window.addEventListener('resize', () => {
+            // Небольшая задержка, чтобы PIXI и браузер успели обновить размеры
+            requestAnimationFrame(() => this.onResize());
+        });
         this.winModal.on('restart', () => this.restartGame());
     }
 
     onResize() {
-        const { width, height } = this.app.screen;
+        // Используем актуальные размеры из renderer.screen
+        const { width, height } = this.app.renderer.screen;
         
         if (this.background) this.background.resize(width, height);
         
@@ -283,12 +298,12 @@ export class GameController {
     }
 
     startIntro() {
-        if (this.background) {
+        /*if (this.background) {
             gsap.from(this.background, {
                 alpha: 0,
                 duration: 1.5,
                 ease: 'power2.out'
             });
-        }
+        }*/
     }
 }
