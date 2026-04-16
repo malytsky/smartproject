@@ -20,7 +20,7 @@ export const GameConfig = {
         { color: 'pink', count: 3 },
         { color: 'blue', count: 4 },
         { color: 'green', count: 5 },
-        { color: 'orange', count: 6 }
+        { color: 'orange', count: 5 }
     ],
     catStates: {
         IDLE: 'idle',

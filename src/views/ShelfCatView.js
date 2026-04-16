@@ -10,6 +10,13 @@ export class ShelfCatView extends PIXI.Container {
         this.sprite = new PIXI.Sprite();
         this.sprite.anchor.set(0.5, 0.9); // Привязка к низу, чтобы кот стоял на полке
         this.addChild(this.sprite);
+
+        this.sprite.eventMode = 'static';
+        this.sprite.cursor = 'pointer';
+        this.sprite.on('pointerdown', () => {
+            if (this.currentState === this.config.catStates.SLEEP) return;
+            this.emit('catClick', this);
+        });
         
         this.setState(this.config.catStates.IDLE);
         this.scale.set(this.config.catOnShelfScale);
@@ -21,6 +28,22 @@ export class ShelfCatView extends PIXI.Container {
         const texture = this.assetLoader.getTexture(textureName);
         if (texture) {
             this.sprite.texture = texture;
+            
+            // Если это стейт select, он обычно в два раза выше idle
+            // Нам нужно скорректировать масштаб, чтобы визуально кот не увеличивался
+            if (state === this.config.catStates.SELECT) {
+                // Высота idle примерно 260, высота select примерно 500
+                // Будем использовать коэффициент 0.52 (260/500), чтобы привести к размеру idle
+                this.sprite.scale.set(0.52);
+            } else {
+                this.sprite.scale.set(1);
+            }
+        }
+        
+        if (state === this.config.catStates.SLEEP) {
+            this.sprite.cursor = 'default';
+        } else {
+            this.sprite.cursor = 'pointer';
         }
     }
 

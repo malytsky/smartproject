@@ -12,6 +12,7 @@ export class GameController {
         
         this.background = null;
         this.shelves = null;
+        this.isMoving = false;
     }
 
     async init() {
@@ -62,9 +63,106 @@ export class GameController {
             [catPool[i], catPool[j]] = [catPool[j], catPool[i]];
         }
 
+        // Выбираем случайную пустую полку
+        const totalShelves = this.shelves.shelves.length;
+        const emptyIndex = Math.floor(Math.random() * totalShelves);
+        
+        let poolIndex = 0;
         // Расставляем по полкам
-        catPool.forEach((color, index) => {
-            this.shelves.addCatToShelf(index, color);
+        for (let i = 0; i < totalShelves; i++) {
+            if (i === emptyIndex) continue;
+            
+            const color = catPool[poolIndex++];
+            const cat = this.shelves.addCatToShelf(i, color);
+            if (cat) {
+                cat.on('catClick', (clickedCat) => this.onCatClick(clickedCat));
+            }
+        }
+
+        // Начальная проверка на заполнение рядов
+        this.checkRowsCompletion();
+    }
+
+    onCatClick(cat) {
+        if (this.isMoving) return;
+
+        const emptyShelfIndex = this.shelves.getEmptyShelfIndex();
+        if (emptyShelfIndex === -1) return;
+
+        this.isMoving = true;
+        
+        // Стейт select
+        cat.setState(GameConfig.catStates.SELECT);
+
+        // Чтобы кот был на переднем плане, временно переносим его в stage
+        const currentGlobalPos = cat.toGlobal(new PIXI.Point(0, 0));
+        this.app.stage.addChild(cat);
+        const stagePos = this.app.stage.toLocal(currentGlobalPos);
+        cat.x = stagePos.x;
+        cat.y = stagePos.y;
+
+        // Получаем глобальные координаты полки назначения
+        const targetGlobalPos = this.shelves.getShelfGlobalPosition(emptyShelfIndex);
+        const targetStagePos = this.app.stage.toLocal(targetGlobalPos);
+
+        gsap.to(cat, {
+            x: targetStagePos.x,
+            y: targetStagePos.y,
+            duration: 0.5,
+            ease: 'power2.inOut',
+            onComplete: () => {
+                // Перемещаем кота в новый контейнер полки
+                const targetShelfContainer = this.shelves.shelves[emptyShelfIndex].container;
+                
+                // Чтобы сохранить визуальную позицию при смене родителя
+                cat.x = 0;
+                cat.y = 5;
+                targetShelfContainer.addChild(cat);
+
+                // Обновляем логику в ShelvesView
+                this.shelves.moveCatToShelf(cat, emptyShelfIndex);
+
+                // Стейт idle
+                cat.setState(GameConfig.catStates.IDLE);
+                
+                // Проверка на заполнение ряда
+                this.checkRowsCompletion();
+                
+                this.isMoving = false;
+            }
+        });
+    }
+
+    checkRowsCompletion() {
+        const rows = this.shelves.getRows();
+        
+        rows.forEach(row => {
+            const isOrangeRow = row.color === 'orange';
+            const totalShelvesInRow = row.shelves.length;
+            const catsInRow = row.shelves.filter(s => s.cat !== null).map(s => s.cat);
+            
+            let isComplete = false;
+            
+            if (isOrangeRow) {
+                // Исключение для оранжевых: котов на 1 меньше чем полок
+                // Но все имеющиеся коты должны быть оранжевыми
+                const orangeCats = catsInRow.filter(cat => cat.color === 'orange');
+                if (catsInRow.length === totalShelvesInRow - 1 && orangeCats.length === catsInRow.length) {
+                    isComplete = true;
+                }
+            } else {
+                // Для остальных: все полки заняты котами соответствующего цвета
+                const matchingColorCats = catsInRow.filter(cat => cat.color === row.color);
+                if (catsInRow.length === totalShelvesInRow && matchingColorCats.length === totalShelvesInRow) {
+                    isComplete = true;
+                }
+            }
+
+            if (isComplete) {
+                catsInRow.forEach(cat => {
+                    cat.setState(GameConfig.catStates.SLEEP);
+                });
+            }
         });
     }
 

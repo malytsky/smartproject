@@ -27,7 +27,12 @@ export class ShelvesView extends PIXI.Container {
                 shelfContainer.y = rowIndex * shelfSpacingY - (shelfConfig.length * shelfSpacingY) / 2 + 70;
                 
                 this.addChild(shelfContainer);
-                this.shelves.push(shelfContainer);
+                this.shelves.push({
+                    container: shelfContainer,
+                    cat: null,
+                    rowColor: row.color,
+                    rowIndex: rowIndex
+                });
             }
         });
     }
@@ -37,8 +42,42 @@ export class ShelvesView extends PIXI.Container {
             const cat = new ShelfCatView(this.assetLoader, catColor, this.config);
             // Позиционируем кота на полке (чуть выше центра полки)
             cat.y = 5;
-            this.shelves[index].addChild(cat);
+            this.shelves[index].container.addChild(cat);
+            this.shelves[index].cat = cat;
+            return cat;
         }
+        return null;
+    }
+
+    getEmptyShelfIndex() {
+        return this.shelves.findIndex(s => s.cat === null);
+    }
+
+    getShelfGlobalPosition(index) {
+        if (!this.shelves[index]) return null;
+        return this.shelves[index].container.toGlobal(new PIXI.Point(0, 5));
+    }
+
+    moveCatToShelf(cat, targetShelfIndex) {
+        const currentShelfIndex = this.shelves.findIndex(s => s.cat === cat);
+        if (currentShelfIndex !== -1) {
+            this.shelves[currentShelfIndex].cat = null;
+        }
+        this.shelves[targetShelfIndex].cat = cat;
+    }
+
+    getRows() {
+        const rows = [];
+        this.shelves.forEach(shelf => {
+            if (!rows[shelf.rowIndex]) {
+                rows[shelf.rowIndex] = {
+                    color: shelf.rowColor,
+                    shelves: []
+                };
+            }
+            rows[shelf.rowIndex].shelves.push(shelf);
+        });
+        return rows;
     }
 
     resize(width, height) {
