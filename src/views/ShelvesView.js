@@ -100,7 +100,28 @@ export class ShelvesView extends PIXI.Container {
 
     resize(width, height) {
         this.position.set(width / 2, height / 2);
-        const baseScale = Math.min(width, height) / (this.config.shelvesBaseScale || 1200);
+        
+        // Высота всей композиции (CTA + Gaps + Shelves + Button):
+        // CTA: 144
+        // Gap: 40
+        // Shelves: rowIndex from 0 to 5, total height = (5 * 210) + shelfHeight(175) = 1225
+        // Gap: 40
+        // Button: 189
+        // Итого: 144 + 40 + 1225 + 40 + 189 = 1638
+        
+        const totalContentHeight = 1650; 
+        const totalContentWidth = 900; // 6 * 150
+        
+        const scaleX = width / totalContentWidth;
+        const scaleY = height / totalContentHeight;
+        
+        const baseScale = Math.min(scaleX, scaleY, 1);
         this.scale.set(baseScale);
+
+        // Центрируем всю композицию в ShelvesView.y
+        // Чтобы все было сбалансировано, сдвинем ShelvesView.y чуть вниз,
+        // так как сверху CTA (144), а снизу Button (189). 
+        // Разница (189 - 144) / 2 = 22.5. Сдвинем на 23px * scale вниз.
+        this.y = (height / 2) + (23 * this.scale.y);
     }
 }

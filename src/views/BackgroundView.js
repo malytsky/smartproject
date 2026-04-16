@@ -7,16 +7,11 @@ export class BackgroundView extends PIXI.Sprite {
     }
 
     resize(width, height) {
-        const bgAspect = this.texture.width / this.texture.height;
-        const screenAspect = width / height;
-
-        if (screenAspect > bgAspect) {
-            this.width = width;
-            this.height = width / bgAspect;
-        } else {
-            this.height = height;
-            this.width = height * bgAspect;
-        }
+        const scaleX = width / this.texture.width;
+        const scaleY = height / this.texture.height;
+        const scale = Math.max(scaleX, scaleY);
+        
+        this.scale.set(scale);
         this.position.set(width / 2, height / 2);
     }
 }

@@ -34,15 +34,18 @@ export class CallToActionView extends PIXI.Container {
     }
 
     resize(width, height, shelfTopGlobalY) {
-        // Позиционируем по центру по горизонтали
         this.x = width / 2;
-        
-        // Масштабирование
-        const baseScale = Math.min(width, height) / (this.config.shelvesBaseScale || 1200);
-        this.scale.set(baseScale);
+        this.scale.set(this.parent.getChildAt(1).scale.x); // Используем масштаб ShelvesView
 
-        // Позиционируем на 20 пикселей выше верхней полки
-        // shelfTopGlobalY - это координата Y верхней точки верхней полки в глобальных координатах
-        this.y = shelfTopGlobalY - (this.sprite.height * this.scale.y / 2) - 60;
+        // Позиционируем на 40 пикселей выше верхней границы полок (с учетом масштаба)
+        const gap = 40 * this.scale.y;
+        this.y = shelfTopGlobalY - (this.sprite.height * this.scale.y / 2) - gap;
+        
+        // Ограничение по верху экрана: если контент все равно не лезет, 
+        // упираем в край, но не сдвигаем ниже, чем положено относительно полок
+        const topMargin = 10;
+        if (this.y - (this.sprite.height * this.scale.y / 2) < topMargin) {
+            this.y = topMargin + (this.sprite.height * this.scale.y / 2);
+        }
     }
 }

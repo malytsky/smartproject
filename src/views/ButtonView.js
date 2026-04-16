@@ -67,12 +67,18 @@ export class ButtonView extends PIXI.Container {
 
     resize(width, height, shelfBottomGlobalY) {
         this.x = width / 2;
-        
-        const baseScale = Math.min(width, height) / (this.config.shelvesBaseScale || 1200);
-        this.scale.set(baseScale);
+        this.scale.set(this.parent.getChildAt(1).scale.x); // Используем масштаб ShelvesView
 
-        // Позиционируем на 60 пикселей ниже нижней полки
-        // shelfBottomGlobalY - это координата Y нижней точки нижней полки в глобальных координатах
-        this.y = shelfBottomGlobalY + (this.sprite.height * this.scale.y / 2) + 60;
+        // Позиционируем ниже нижней границы полок (с учетом масштаба)
+        const gap = 40 * this.scale.y;
+        this.y = shelfBottomGlobalY + (this.sprite.height * this.scale.y / 2) + gap;
+        
+        // Ограничение по низу экрана: если контент не лезет, 
+        // упираем в край, но не сдвигаем выше, чем положено относительно полок
+        const bottomMargin = 10;
+        const buttonBottomY = this.y + (this.sprite.height * this.scale.y / 2);
+        if (buttonBottomY > height - bottomMargin) {
+            this.y = height - bottomMargin - (this.sprite.height * this.scale.y / 2);
+        }
     }
 }

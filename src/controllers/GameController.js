@@ -225,16 +225,17 @@ export class GameController {
         const { width, height } = this.app.screen;
         
         if (this.background) this.background.resize(width, height);
-        if (this.shelves) {
-            this.shelves.resize(width, height);
-            if (this.cta) {
-                const shelfTopY = this.shelves.getTopShelfGlobalY();
-                this.cta.resize(width, height, shelfTopY);
-            }
-            if (this.button) {
-                const shelfBottomY = this.shelves.getBottomShelfGlobalY();
-                this.button.resize(width, height, shelfBottomY);
-            }
+        
+        this.shelves.resize(width, height);
+        
+        const shelfTopY = this.shelves.getTopShelfGlobalY();
+        const shelfBottomY = this.shelves.getBottomShelfGlobalY();
+        
+        if (this.cta) {
+            this.cta.resize(width, height, shelfTopY);
+        }
+        if (this.button) {
+            this.button.resize(width, height, shelfBottomY);
         }
         if (this.winModal) {
             this.winModal.resize(width, height);
