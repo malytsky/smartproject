@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/malytsky/smartproject#readme",
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "gsap": "^3.15.0",
     "pixi.js": "^8.17.1",
     "vite": "^8.0.8"

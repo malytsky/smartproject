@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { gsap } from 'gsap';
 
 export class WinModalView extends PIXI.Container {
     constructor(assetLoader) {
@@ -24,20 +25,43 @@ export class WinModalView extends PIXI.Container {
         this.on('pointerdown', () => this.emit('restart'));
         
         this.visible = false;
+        this.bounceTween = null;
     }
 
     show() {
         this.visible = true;
         this.alpha = 0;
+        
         // Простая анимация появления
-        import('gsap').then(({ gsap }) => {
-            gsap.to(this, { alpha: 1, duration: 0.5 });
-            gsap.from(this.like.scale, { x: 0, y: 0, duration: 0.5, ease: 'back.out(1.7)' });
+        gsap.to(this, { alpha: 1, duration: 0.5 });
+        gsap.from(this.like.scale, { 
+            x: 0, 
+            y: 0, 
+            duration: 0.5, 
+            ease: 'back.out(1.7)',
+            onComplete: () => this.startLikeAnimation()
+        });
+    }
+
+    startLikeAnimation() {
+        if (this.bounceTween) this.bounceTween.kill();
+
+        this.bounceTween = gsap.to(this.like.scale, {
+            x: '+=0.1',
+            y: '+=0.1',
+            duration: 0.6,
+            yoyo: true,
+            repeat: -1,
+            ease: 'sine.inOut'
         });
     }
 
     hide() {
         this.visible = false;
+        if (this.bounceTween) {
+            this.bounceTween.kill();
+            this.bounceTween = null;
+        }
     }
 
     resize(width, height) {

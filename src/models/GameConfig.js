@@ -13,7 +13,7 @@ export const GameConfig = {
     catOffsetY: 500,
     catOnShelfScale: 0.6,
     shelvesBaseScale: 1200,
-    assetsPath: '/assets/spritesheet.json',
+    assetsPath: './assets/spritesheet.json',
     catTypes: [
         { color: 'white', count: 1 },
         { color: 'yellow', count: 2 },
