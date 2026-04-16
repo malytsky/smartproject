@@ -6,6 +6,7 @@ export class ShelfCatView extends PIXI.Container {
         this.assetLoader = assetLoader;
         this.color = color;
         this.config = config;
+        this.textureCache = new Map();
         
         this.sprite = new PIXI.Sprite();
         this.sprite.anchor.set(0.5, 0.9); // Привязка к низу, чтобы кот стоял на полке
@@ -23,9 +24,21 @@ export class ShelfCatView extends PIXI.Container {
     }
 
     setState(state) {
+        if (this.currentState === state && this.sprite.texture && this.sprite.texture !== PIXI.Texture.EMPTY) {
+            return;
+        }
+        
         this.currentState = state;
-        const textureName = this.getTextureName(this.color, state);
-        const texture = this.assetLoader.getTexture(textureName);
+        let texture = this.textureCache.get(state);
+        
+        if (!texture) {
+            const textureName = this.getTextureName(this.color, state);
+            texture = this.assetLoader.getTexture(textureName);
+            if (texture) {
+                this.textureCache.set(state, texture);
+            }
+        }
+
         if (texture) {
             this.sprite.texture = texture;
             
@@ -61,7 +74,7 @@ export class ShelfCatView extends PIXI.Container {
         ];
 
         for (const variant of variants) {
-            if (this.assetLoader.getTexture(variant)) {
+            if (this.assetLoader.hasTexture(variant)) {
                 return variant;
             }
         }

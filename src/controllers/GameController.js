@@ -33,29 +33,28 @@ export class GameController {
 
         document.getElementById('app').appendChild(this.app.canvas);
 
-        try {
-            await this.assetLoader.load(GameConfig.assetsPath);
-            this.setupViews();
-            this.setupListeners();
-            this.onResize();
-            this.startIntro();
-        } catch (error) {
-            this.showErrorText();
-        }
+        await this.assetLoader.load(GameConfig.assetsPath);
+        this.setupViews();
+        this.setupListeners();
+        this.onResize();
+        this.startIntro();
     }
 
     setupViews() {
         const bgTexture = this.assetLoader.getTexture('back.png');
         this.background = new BackgroundView(bgTexture);
+        this.background.cullable = true;
         
         this.shelves = new ShelvesView(this.assetLoader, GameConfig);
 
         const ctaTexture = this.assetLoader.getTexture('Call to action.png');
         this.cta = new CallToActionView(ctaTexture, GameConfig);
+        this.cta.cullable = true;
         this.cta.scale.set(0.5);
 
         const buttonTexture = this.assetLoader.getTexture('Button.png');
         this.button = new ButtonView(buttonTexture, GameConfig);
+        this.button.cullable = true;
         this.button.scale.set(0.5);
 
         this.winModal = new WinModalView(this.assetLoader);
@@ -131,13 +130,11 @@ export class GameController {
             duration: 0.5,
             ease: 'power2.inOut',
             onComplete: () => {
-                // Перемещаем кота в новый контейнер полки
-                const targetShelfContainer = this.shelves.shelves[emptyShelfIndex].container;
-                
-                // Чтобы сохранить визуальную позицию при смене родителя
-                cat.x = 0;
-                cat.y = 5;
-                targetShelfContainer.addChild(cat);
+                // Возвращаем кота в catsContainer в ShelvesView
+                const shelf = this.shelves.shelves[emptyShelfIndex].container;
+                cat.x = shelf.x;
+                cat.y = shelf.y + 5;
+                this.shelves.catsContainer.addChild(cat);
 
                 // Обновляем логику в ShelvesView
                 this.shelves.moveCatToShelf(cat, emptyShelfIndex);
@@ -202,17 +199,60 @@ export class GameController {
         this.isGameEnded = false;
         this.winModal.hide();
         
-        // Очищаем всех котов с полок
+        // Собираем всех котов в пул для переиспользования
+        const catPool = {}; // Группируем по цветам
         this.shelves.shelves.forEach(shelf => {
             if (shelf.cat) {
-                shelf.container.removeChild(shelf.cat);
-                shelf.cat.destroy();
+                const cat = shelf.cat;
+                const color = cat.color;
+                if (!catPool[color]) catPool[color] = [];
+                catPool[color].push(cat);
+                
+                this.shelves.catsContainer.removeChild(cat);
                 shelf.cat = null;
             }
         });
         
-        // Распределяем заново
-        this.distributeCats();
+        // Новое распределение
+        const targetColors = [];
+        GameConfig.catTypes.forEach(catType => {
+            for (let i = 0; i < catType.count; i++) {
+                targetColors.push(catType.color);
+            }
+        });
+
+        // Перемешиваем цвета
+        for (let i = targetColors.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [targetColors[i], targetColors[j]] = [targetColors[j], targetColors[i]];
+        }
+
+        // Выбираем случайную пустую полку
+        const totalShelves = this.shelves.shelves.length;
+        const emptyIndex = Math.floor(Math.random() * totalShelves);
+        
+        let colorIndex = 0;
+        for (let i = 0; i < totalShelves; i++) {
+            if (i === emptyIndex) continue;
+            
+            const color = targetColors[colorIndex++];
+            let cat;
+            
+            // Пытаемся взять кота нужного цвета из пула
+            if (catPool[color] && catPool[color].length > 0) {
+                cat = catPool[color].pop();
+                cat.setState(GameConfig.catStates.IDLE);
+            }
+            
+            this.shelves.addCatToShelf(i, color, cat);
+        }
+
+        // Уничтожаем оставшихся (если вдруг состав поменялся, хотя тут он фиксирован)
+        Object.values(catPool).forEach(list => {
+            list.forEach(cat => cat.destroy());
+        });
+        
+        this.checkRowsCompletion();
         this.onResize();
     }
 
@@ -232,10 +272,10 @@ export class GameController {
         const shelfBottomY = this.shelves.getBottomShelfGlobalY();
         
         if (this.cta) {
-            this.cta.resize(width, height, shelfTopY);
+            this.cta.resize(width, height, shelfTopY, this.shelves.scale.x);
         }
         if (this.button) {
-            this.button.resize(width, height, shelfBottomY);
+            this.button.resize(width, height, shelfBottomY, this.shelves.scale.x);
         }
         if (this.winModal) {
             this.winModal.resize(width, height);
@@ -250,19 +290,5 @@ export class GameController {
                 ease: 'power2.out'
             });
         }
-    }
-
-    showErrorText() {
-        const text = new PIXI.Text({
-            text: 'Ошибка загрузки ассетов!',
-            style: {
-                fill: '#ffffff',
-                fontSize: 36
-            }
-        });
-        text.anchor.set(0.5);
-        text.x = this.app.screen.width / 2;
-        text.y = this.app.screen.height / 2;
-        this.app.stage.addChild(text);
     }
 }

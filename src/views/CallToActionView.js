@@ -33,9 +33,9 @@ export class CallToActionView extends PIXI.Container {
         gsap.delayedCall(5, bounce);
     }
 
-    resize(width, height, shelfTopGlobalY) {
+    resize(width, height, shelfTopGlobalY, shelvesScale) {
         this.x = width / 2;
-        this.scale.set(this.parent.getChildAt(1).scale.x); // Используем масштаб ShelvesView
+        this.scale.set(shelvesScale); 
 
         // Позиционируем на 40 пикселей выше верхней границы полок (с учетом масштаба)
         const gap = 40 * this.scale.y;

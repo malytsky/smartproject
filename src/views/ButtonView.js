@@ -65,9 +65,9 @@ export class ButtonView extends PIXI.Container {
         });
     }
 
-    resize(width, height, shelfBottomGlobalY) {
+    resize(width, height, shelfBottomGlobalY, shelvesScale) {
         this.x = width / 2;
-        this.scale.set(this.parent.getChildAt(1).scale.x); // Используем масштаб ShelvesView
+        this.scale.set(shelvesScale); 
 
         // Позиционируем ниже нижней границы полок (с учетом масштаба)
         const gap = 40 * this.scale.y;
