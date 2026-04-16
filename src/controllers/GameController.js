@@ -5,6 +5,7 @@ import { BackgroundView } from '../views/BackgroundView';
 import { ShelvesView } from '../views/ShelvesView';
 import { CallToActionView } from '../views/CallToActionView';
 import { ButtonView } from '../views/ButtonView';
+import { WinModalView } from '../views/WinModalView';
 import { gsap } from 'gsap';
 
 export class GameController {
@@ -16,7 +17,9 @@ export class GameController {
         this.shelves = null;
         this.cta = null;
         this.button = null;
+        this.winModal = null;
         this.isMoving = false;
+        this.isGameEnded = false;
     }
 
     async init() {
@@ -55,10 +58,13 @@ export class GameController {
         this.button = new ButtonView(buttonTexture, GameConfig);
         this.button.scale.set(0.5);
 
+        this.winModal = new WinModalView(this.assetLoader);
+
         this.app.stage.addChild(this.background);
         this.app.stage.addChild(this.shelves);
         this.app.stage.addChild(this.cta);
         this.app.stage.addChild(this.button);
+        this.app.stage.addChild(this.winModal);
 
         this.distributeCats();
     }
@@ -98,7 +104,7 @@ export class GameController {
     }
 
     onCatClick(cat) {
-        if (this.isMoving) return;
+        if (this.isMoving || this.isGameEnded) return;
 
         const emptyShelfIndex = this.shelves.getEmptyShelfIndex();
         if (emptyShelfIndex === -1) return;
@@ -149,6 +155,7 @@ export class GameController {
 
     checkRowsCompletion() {
         const rows = this.shelves.getRows();
+        let completedRowsCount = 0;
         
         rows.forEach(row => {
             const isOrangeRow = row.color === 'orange';
@@ -173,15 +180,45 @@ export class GameController {
             }
 
             if (isComplete) {
+                completedRowsCount++;
                 catsInRow.forEach(cat => {
                     cat.setState(GameConfig.catStates.SLEEP);
                 });
             }
         });
+
+        // Если все ряды заполнены правильно
+        if (completedRowsCount === rows.length && !this.isGameEnded) {
+            this.endGame();
+        }
+    }
+
+    endGame() {
+        this.isGameEnded = true;
+        this.winModal.show();
+    }
+
+    restartGame() {
+        this.isGameEnded = false;
+        this.winModal.hide();
+        
+        // Очищаем всех котов с полок
+        this.shelves.shelves.forEach(shelf => {
+            if (shelf.cat) {
+                shelf.container.removeChild(shelf.cat);
+                shelf.cat.destroy();
+                shelf.cat = null;
+            }
+        });
+        
+        // Распределяем заново
+        this.distributeCats();
+        this.onResize();
     }
 
     setupListeners() {
         window.addEventListener('resize', () => this.onResize());
+        this.winModal.on('restart', () => this.restartGame());
     }
 
     onResize() {
@@ -198,6 +235,9 @@ export class GameController {
                 const shelfBottomY = this.shelves.getBottomShelfGlobalY();
                 this.button.resize(width, height, shelfBottomY);
             }
+        }
+        if (this.winModal) {
+            this.winModal.resize(width, height);
         }
     }
 
